@@ -1,0 +1,118 @@
+{
+  "title": "Dirt Delay",
+  "children": [
+    {
+      "title": "Overview",
+      "lines": [
+        "Two delays in series,",
+        "each fed through",
+        "drive or bitcrush.",
+        "",
+        "Grown from a Daisy",
+        "Versio patch.",
+        "",
+        "The first echo comes",
+        "back at twice Time:",
+        "both delays share it.",
+        "",
+        "Stereo: the left",
+        "side runs at 3/4",
+        "of Time, so the",
+        "echoes land apart.",
+        "",
+        "Mix changes the",
+        "balance, never the",
+        "volume."
+      ]
+    },
+    {
+      "title": "Controls",
+      "lines": [
+        "1 Mix: dry / wet",
+        "2 Drive: drive AND",
+        "  downsample",
+        "3 Time: 0-250 ms",
+        "4 Fdbk: repeats",
+        "5 Crush: bit depth",
+        "6 Gain: input level",
+        "  into the drive",
+        "7 FX 1: Off/OD/BC",
+        "8 FX 2: Off/OD/BC",
+        "",
+        "Everything is on",
+        "one page."
+      ]
+    },
+    {
+      "title": "Gain and Drive",
+      "lines": [
+        "Gain pushes the",
+        "signal into the",
+        "drive, up to +24 dB.",
+        "For a Move track",
+        "that is the hot",
+        "level a Eurorack",
+        "patch would send.",
+        "",
+        "Drive sets how hard",
+        "it saturates, from",
+        "0.3 (just warm) up.",
+        "",
+        "The wet volume stays",
+        "put: turn either one",
+        "and only the",
+        "character changes.",
+        "",
+        "A fixed bass boost",
+        "(+6 dB at 100 Hz)",
+        "sits before the",
+        "drive, so the low",
+        "end is what gets",
+        "pushed hardest."
+      ]
+    },
+    {
+      "title": "FX 1 and FX 2",
+      "lines": [
+        "The Versio's two",
+        "switches.",
+        "",
+        "FX 1 sits before the",
+        "first delay, FX 2",
+        "between the two.",
+        "",
+        "Off: straight on",
+        "OD: overdrive",
+        "BC: bitcrush and",
+        "    downsample",
+        "",
+        "Crush sets the bits,",
+        "Drive sets the",
+        "sample-rate drop.",
+        "",
+        "As on the Versio,",
+        "FX 2's OD follows",
+        "Drive only while",
+        "FX 1 is on OD too."
+      ]
+    },
+    {
+      "title": "Level Match",
+      "lines": [
+        "Always on. The wet",
+        "path is brought to",
+        "the dry level, and",
+        "the crossfade keeps",
+        "power constant.",
+        "",
+        "It settles in about",
+        "half a second. A",
+        "sudden jump is held",
+        "to +3 dB at once.",
+        "",
+        "A ringing tail is",
+        "left alone to fade."
+      ]
+    }
+  ]
+}
