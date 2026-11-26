@@ -1,29 +1,36 @@
 # Dirt Delay v0.5.1
 
-Daisy Versio用パッチ（OD → OD/BC → Delay → 2 kHz LP → OD/BC → Delay → SVF LP →
-Tap Boost、Dry/Wet）から始めたSchwungのAudio FX（`audio_fx_api_v2`）。
-44.1 kHz / 128 frames / stereo int16、L/R独立処理。
+**English** | [日本語](README.ja.md)
 
-v0.3で、原典のローパス2つ（2 kHz OnePoleとSVF）とTap Boostを外し、Input Gainを追加、
-Level Matchを常時Onにして、全パラメータを1ページ8ノブに収めました。
-残した部品（DaisySPの`Overdrive` / `Decimator` / `DelayLine`）はC言語で演算単位まで
-同じ式に書き直しています（`dsp/dirt_engine.c`）。DaisySP本体への依存はありません。
+A Schwung Audio FX (`audio_fx_api_v2`) that started from a Daisy Versio patch
+(OD → OD/BC → Delay → 2 kHz LP → OD/BC → Delay → SVF LP → Tap Boost, Dry/Wet).
+44.1 kHz / 128 frames / stereo int16, left and right processed independently.
+
+In v0.3 the original's two low-passes (the 2 kHz OnePole and the SVF) and Tap
+Boost were removed, Input Gain was added, Level Match was made always on, and
+every parameter was fitted onto one page of 8 knobs. The parts that remain
+(DaisySP's `Overdrive` / `Decimator` / `DelayLine`) are rewritten in C with the
+same formulas down to each operation (`dsp/dirt_engine.c`). There is no
+dependency on DaisySP itself.
 
 ## Build / test
 
-このSchwungリポジトリのルートで実行。Linux/WSL、Python 3、GCC、
-aarch64-linux-gnu-gcc、UI検証用Node.jsが必要です。
+Run from the root of this repository. Needs Linux/WSL, Python 3, GCC,
+aarch64-linux-gnu-gcc, and Node.js for the UI check. Schwung's plugin API
+headers (MIT) are bundled in `third_party/schwung/`. The UI check needs a
+Schwung checkout (for its page planner): `../schwung` next to this repository,
+or `SCHWUNG_ROOT=/path/to/schwung`.
 
 ```bash
 bash scripts/test.sh
 bash scripts/build.sh arm64
 ```
 
-`test.sh`はnativeビルド＋ASan/UBSanのエンジンテスト、実`.so`をdlopenする
-ABIスモークテスト、Schwungのページプランナーでの契約検証を行います。
-配布物は `dist/dirt-delay-module.tar.gz`。チェーンホストは
-`audio_fx/<id>/<id>.so` を読むため、共有ライブラリ名は `dirt-delay.so` です。
-ホスト標準9モジュールの配布には加えず、独立パッケージで提供します。
+`test.sh` runs a native build plus the engine tests under ASan/UBSan, an ABI
+smoke test that dlopens the real `.so`, and a contract check with Schwung's page
+planner. The package is `dist/dirt-delay-module.tar.gz`. The chain host loads
+`audio_fx/<id>/<id>.so`, so the shared library is named `dirt-delay.so`. It is
+not part of Schwung's own distribution and is provided as a separate package.
 
 ## Install
 
@@ -32,91 +39,104 @@ python3 scripts/install.py http://move.local:7700 --check
 python3 scripts/install.py http://move.local:7700
 ```
 
-Managerの `POST /modules/install-custom`（tarball upload）を使い、
-`modules/audio_fx/dirt-delay/` に展開されます。Managerの/modulesから
-Custom installで手動アップロードも可能です。
+This uses the Manager's `POST /modules/install-custom` (tarball upload) and
+unpacks to `modules/audio_fx/dirt-delay/`. You can also upload it by hand with
+Custom install on the Manager's /modules page.
 
-## ノブ（1ページのみ）
+## Knobs (one page only)
 
-| Knob | 名前 | 範囲 | 内容 | 原典 |
+| Knob | Name | Range | What it does | Original |
 |---|---|---|---|---|
-| 1 | Mix | 0〜1 | Dry/Wet（等パワー、音量一定） | KNOB_0 |
-| 2 | Drive | 0.3〜1 | ODのドライブ **と** BCのダウンサンプル（原典通り兼用） | KNOB_2 |
-| 3 | Time | 0〜250 ms | 2本のディレイ共通（左はその3/4） | KNOB_3 |
-| 4 | Feedback | 0〜0.9 | 原典の`min(knob, 0.9)`と同じ範囲 | KNOB_4 |
-| 5 | Crush | 0〜1 | BCのビット削減（0〜16bit） | KNOB_1 |
-| 6 | Input Gain | 0〜+24 dB | Wet経路の入力ゲイン。歪みの深さを決める | なし |
-| 7 | FX 1 | Off / OD / BC | 1段目ディレイの前 | sw[0] |
-| 8 | FX 2 | Off / OD / BC | 2つのディレイの間 | sw[1] |
+| 1 | Mix | 0–1 | Dry/Wet (equal power, constant level) | KNOB_0 |
+| 2 | Drive | 0.3–1 | OD drive **and** BC downsampling (shared, as in the original) | KNOB_2 |
+| 3 | Time | 0–250 ms | Shared by both delays (left uses 3/4 of it) | KNOB_3 |
+| 4 | Feedback | 0–0.9 | Same range as the original's `min(knob, 0.9)` | KNOB_4 |
+| 5 | Crush | 0–1 | BC bit reduction (0–16 bit) | KNOB_1 |
+| 6 | Input Gain | 0 to +24 dB | Input gain of the wet path. Sets how deep the distortion goes | none |
+| 7 | FX 1 | Off / OD / BC | Before the first delay | sw[0] |
+| 8 | FX 2 | Off / OD / BC | Between the two delays | sw[1] |
 
-信号の流れ： 入力 × Input Gain → 低音ブースト（固定）→ OD（Drive、常時）→ FX 1 → Delay 1 → FX 2 → Delay 2 →
-Level Match → Dryと等パワーでMix。
+Signal flow: input × Input Gain → bass boost (fixed) → OD (Drive, always on) →
+FX 1 → Delay 1 → FX 2 → Delay 2 → Level Match → equal-power Mix with the dry.
 
-**Input Gainの効き方**（110 Hzサイン、-12 dBFS入力、Drive 0.3）：0 dBで歪み率約1%、
-+24 dBで約33%（v0.4の低音ブースト込み）。Level Matchにより出力音量は変わらず（差0.0 dB）、変わるのは歪みだけ。
-Input GainはWet経路にだけかかり、Dryは素通し。
+**How Input Gain acts** (110 Hz sine, -12 dBFS input, Drive 0.3): about 1 %
+distortion at 0 dB, about 33 % at +24 dB (including v0.4's bass boost). Level
+Match keeps the output level the same (0.0 dB difference); only the distortion
+changes. Input Gain applies only to the wet path; the dry passes untouched.
 
-**ステレオ（v0.5、ノブ無し・固定）**：左のディレイ2本をTimeの3/4、右をTimeどおりに
-動かします。左右のエコーが別々のタイミングで返るので、モノラルの音源（Moveのシンセの多く）
-からでもWetが左右に広がります。ノイズを入れた測定で、Wetの左右の相関は1.0（完全に同じ）から
-0.18に下がりました。最初のエコーは右が2×Time、左が1.5×Time。
-左右の時間が違うので、Moveの内蔵スピーカーなどモノラルで聴くと、エコーが2回に分かれたり、
-少しこもったりして聞こえることがあります。Dryには掛かりません。
+**Stereo (v0.5, no knob, fixed)**: the left pair of delays runs at 3/4 of Time
+and the right pair at Time. Left and right echoes return at different times, so
+the wet spreads across left and right even from a mono source (most of Move's
+synths). Measured with noise, the wet's left/right correlation fell from 1.0
+(identical) to 0.18. The first echo arrives at 2×Time on the right and
+1.5×Time on the left. Because the two sides differ in time, listening in mono
+(such as Move's built-in speaker) can make the echoes split in two or sound a
+little dull. The dry is not affected.
 
-**低音ブースト（v0.4、ノブ無し・固定）**：100 Hzを中心に+6 dB持ち上げるローシェルフ
-（RBJ biquad、S = 1）を、Wet経路の歪みの**前**に入れています。低音が強めに歪みへ押し込まれ、
-ファズにベースブーストを入れたような太い低域になります。55 Hzと880 Hzを同時に入れた測定で、
-v0.3では両者が同じだけ出ていたのに対し、v0.4では55 Hzが880 Hzより約+6〜+11 dB前に出ます
-（Driveが深いほど差が大きい）。Level MatchがWet全体の音量を揃えるので、全体の音量は変わらず、
-低音と中高域のバランスだけが変わります。Dryには掛かりません。
+**Bass boost (v0.4, no knob, fixed)**: a low shelf lifting +6 dB around 100 Hz
+(RBJ biquad, S = 1) sits **before** the wet path's distortion. The low end is
+pushed harder into the distortion, giving the fat lows of a fuzz with a bass
+boost. Measured with 55 Hz and 880 Hz together: in v0.3 both came out equally,
+in v0.4 55 Hz comes out about +6 to +11 dB ahead of 880 Hz (more with deeper
+Drive). Level Match evens out the whole wet level, so the overall level does not
+change, only the balance of lows against mids and highs. The dry is not affected.
 
-## Level Match（常時On）
+## Level Match (always on)
 
-Mixを動かしても出力音量が変わりません。
+Moving Mix does not change the output level.
 
-1. **等パワー・クロスフェード**（dry = cos、wet = sin）。原典の直線クロスフェードは
-   無相関な2信号だと中央で約3 dB落ちる。
-2. **Wetの自動レベル合わせ**。Wet経路の音量はInput Gain・Drive・Feedbackで大きく動くため、
-   Wetのパワーを**2×Time前の**Dryのパワー（最初のエコーの元になった区間）に合わせる。
-   - 目標値は対称な遅い追従（0.4 s）から計算。補正幅は-36〜+24 dB。
-   - 急な増加（Drive・Input Gainを上げる）は、同じブロック内で判定する速い追従で
-     **+3 dBに即座に抑える**。ゲインは下げるのが速く、上げるのが遅い（0.3 s）。
-   - Dry・Wetの両方に信号があるブロックだけで学習するので、入力が止まった後の
-     残響は補正されずにそのまま減衰する。
+1. **Equal-power crossfade** (dry = cos, wet = sin). The original's linear
+   crossfade drops about 3 dB in the middle for two uncorrelated signals.
+2. **Automatic wet level matching**. The wet level moves a lot with Input Gain,
+   Drive and Feedback, so the wet power is matched to the dry power **2×Time
+   earlier** (the stretch that became the first echo).
+   - The target comes from a symmetric slow follower (0.4 s). Correction range
+     -36 to +24 dB.
+   - Sudden increases (raising Drive or Input Gain) are **held to +3 dB at once**
+     by a fast follower judged within the same block. The gain falls fast and
+     rises slowly (0.3 s).
+   - It learns only from blocks where both dry and wet carry signal, so the
+     tail after the input stops is not corrected and decays as it is.
 
-測定値（`tests/test_engine.c`）：ホワイトノイズで6通りの設定×Mix 5点、減衰音の連打
-（Drive 0.3/0.5/0.9）のすべてが±0.66 dB以内。Drive 0.3→1.0、Input Gain 0→+24 dB、
-Feedback 0→0.9の急変でも10 ms窓の最大が+3.4 dB。
-Time 0付近（Wet≒Dry）ではDryとWetが相関するため、Mix中央でわずかに大きくなります。
+Measurements (`tests/test_engine.c`): white noise in 6 settings × 5 Mix points,
+and repeated decaying hits (Drive 0.3/0.5/0.9), all within ±0.66 dB. Even with
+sudden changes of Drive 0.3→1.0, Input Gain 0→+24 dB and Feedback 0→0.9 the
+10 ms window maximum is +3.4 dB. Near Time 0 (wet ≈ dry) dry and wet are
+correlated, so the middle of Mix is slightly louder.
 
-## 原典から変えたところ
+## What changed from the original
 
-- **ローパスなし**。原典はDelay 1の出力に2 kHz OnePole、Delay 2の出力にSVF LP
-  （Cutoff/Res）を持っていたが、どちらも外した。歪みの倍音がそのまま出る。
-  SVFの発散防止ガードもSVFごと不要になった。
-- **Tap Boostなし**。
-- **Drive 0.3〜1**。DaisySPの`Overdrive`はdrive 0でpre-gainが0になり、入力段ODは常時
-  かかっているので、原典はDrive 0でWetが無音だった。0.3でほぼクリーン、0.5で小信号
-  ゲイン約24倍（+27 dB）。
-- **Time 0 = 1サンプル**。`DelayLine`は遅延0で12000サンプル前（約0.27 s）を読むため、
-  ノブを下げ切ると最長ディレイに飛んでいた。
-- **ノブの平滑化**。Moveのエンコーダはステップ値なので、Mix/Input Gain/Drive/Feedbackは
-  10 ms、Timeは60 ms（小数遅延でテープ風のピッチ変化になりクリックしない）で追従。
-- Decimatorのfloat→int変換前クランプと符号なし左シフト（C言語でのUB回避のみ、音は同じ）。
-- 1e-15未満の値を0に丸める（デノーマル対策、-300 dB）。
-- 出力は±1でハードクリップ。
+- **No low-pass**. The original had a 2 kHz OnePole on Delay 1's output and an
+  SVF LP (Cutoff/Res) on Delay 2's output; both are gone. The distortion's
+  harmonics come straight through. The SVF's anti-blow-up guard went with it.
+- **No Tap Boost**.
+- **Drive 0.3–1**. DaisySP's `Overdrive` has zero pre-gain at drive 0, and the
+  input-stage OD is always on, so in the original the wet was silent at Drive 0.
+  0.3 is almost clean; 0.5 is a small-signal gain of about 24× (+27 dB).
+- **Time 0 = 1 sample**. `DelayLine` reads 12000 samples back (about 0.27 s) at
+  zero delay, so turning the knob all the way down jumped to the longest delay.
+- **Knob smoothing**. Move's encoders send stepped values, so Mix/Input
+  Gain/Drive/Feedback follow over 10 ms and Time over 60 ms (a fractional delay,
+  giving a tape-like pitch change instead of a click).
+- A clamp before the Decimator's float→int conversion and an unsigned left shift
+  (only to avoid undefined behaviour in C; the sound is the same).
+- Values below 1e-15 are rounded to 0 (denormal protection, -300 dB).
+- The output hard-clips at ±1.
 
-## 原典どおり残した挙動
+## Behaviour kept from the original
 
-- **最初のエコーはTimeの2倍**で返る（ディレイ2本が直列で同じ時間）。Wetには直音が含まれない。
-- **FX 2のODはドライブを持たない**。`overdrive_l/_r`をFX 1とFX 2で共有し、FX 2は最後に
-  設定された値を使う。FX 1がODのときだけDriveに従い、それ以外は初期値0.5のまま。
+- **The first echo returns at twice Time** (two delays in series with the same
+  time). The wet contains no direct sound.
+- **FX 2's OD has no drive of its own**. `overdrive_l/_r` are shared by FX 1 and
+  FX 2, and FX 2 uses whatever value was set last. It follows Drive only when
+  FX 1 is OD; otherwise it stays at the initial 0.5.
 
-## RT安全性
+## Realtime safety
 
-`create_instance`でもmallocしない静的プール（16インスタンス、計約3 MB BSS）。
-ファイルI/O・ログ・ロックなし。native実測で1オーディオ秒あたり約4 ms。
+A static pool with no malloc even in `create_instance` (16 instances, about
+3 MB of BSS in total). No file I/O, logging or locks. Measured natively at about
+4 ms per second of audio.
 
-状態JSONはversion 3。v0.1（version 1）・v0.2（version 2）の状態も読め、外したキー
-（cutoff / res / boost / match）は無視、Input Gainは0 dB、0.3未満のDriveは0.3に
-引き上げて復元します。
+State JSON is version 3. States from v0.1 (version 1) and v0.2 (version 2) can
+also be read: the removed keys (cutoff / res / boost / match) are ignored, Input
+Gain is restored as 0 dB, and Drive below 0.3 is raised to 0.3.

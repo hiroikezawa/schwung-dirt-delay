@@ -17,7 +17,7 @@ python3 "$MODULE/scripts/metadata.py" "$MODULE/build/generated/metadata.h"
 cp "$MODULE/module.json" "$OUT/"
 if [[ "${1:-arm64}" == arm64 ]]; then
   python3 "$MODULE/scripts/check_abi.py" "$OUT/dirt-delay.so"
-  cp "$MODULE/LICENSE" "$MODULE/THIRD_PARTY_LICENSES.md" "$MODULE/help.json" "$MODULE/README.md" "$OUT/"
+  cp "$MODULE/LICENSE" "$MODULE/THIRD_PARTY_LICENSES.md" "$MODULE/help.json" "$MODULE/README.md" "$MODULE/README.ja.md" "$OUT/"
   tar -czf "$MODULE/dist/dirt-delay-module.tar.gz" -C "$MODULE/dist" dirt-delay
 fi
 file "$OUT/dirt-delay.so"

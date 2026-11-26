@@ -94,8 +94,9 @@ THE SOFTWARE.
 
 ## Schwung — MIT
 
-Built against Schwung's plugin API headers (`src/host/` of the Schwung
-checkout this module builds in; not copied into the module), MIT License:
+Schwung's plugin API headers are bundled in `third_party/schwung/host/`
+(copied unchanged from `src/host/` of Schwung; licence in
+`third_party/schwung/LICENSE`), MIT License:
 
 Source: https://github.com/charlesvestal/schwung
 
